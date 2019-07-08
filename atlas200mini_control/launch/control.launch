@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="robot_namespace" default="/"/>
+  <arg name="odometry" default="false"/>
+  <arg name="gyro_odometry" default="true"/>
+  <arg name="ekf_odometry" default="true"/>
+
+  <!-- Load Controller Configuration -->
+  <rosparam file="$(find atlas200mini_control)/config/control.yaml" command="load"/>
+
+  <!-- Spawn Controllers -->
+  <node pkg="controller_manager" type="spawner" name="base_controller_spawner" args="atlas200mini_joint_publisher atlas200mini_velocity_controller"/>
+
+  <!-- Odometry -->
+  <group if="$(arg odometry)">
+    <!-- EKF Odometry -->
+    <group if="$(arg ekf_odometry)">
+      <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization">
+        <rosparam file="$(find atlas200mini_control)/config/ekf_localization.yaml" command="load"/>
+      </node>
+    </group>
+
+    <!-- Gyro Odometry -->
+    <group if="$(arg gyro_odometry)">
+      <include file="$(find gyro_odometry)/launch/gyro_odometry.launch">
+        <arg name="odom_topic" value="/atlas200mini_velocity_controller/odom"/>
+        <arg name="imu_topic" value="/imu/data"/>
+        <arg name="publish_tf" value="false"/>
+      </include>
+    </group>
+  </group>
+
+  <!-- Twist Mux -->
+  <node pkg="twist_mux" type="twist_mux" name="twist_mux">
+    <rosparam file="$(find atlas200mini_control)/config/twist_mux.yaml" command="load"/>
+    <remap from="cmd_vel_out" to="atlas200mini_velocity_controller/cmd_vel"/>
+  </node>
+
+</launch>

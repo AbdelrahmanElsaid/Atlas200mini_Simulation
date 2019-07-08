@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <group ns="joy_teleop">
+    <rosparam file="$(find atlas200mini_control)/config/teleop.yaml" command="load"/>
+
+    <node pkg="joy" type="joy_node" name="joy"/>
+
+    <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy"/>
+  </group>
+
+</launch>
