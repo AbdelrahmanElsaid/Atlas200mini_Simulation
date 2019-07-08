@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="atlas200mini">
+  <xacro:property name="M_PI" value="3.1415926535897931"/>
+
+  <xacro:arg name="2d_laser" default="false"/>
+  <xacro:arg name="3d_laser" default="false"/>
+  <xacro:arg name="camera" default="false"/>
+  <xacro:arg name="imu" default="false"/>
+  <xacro:arg name="arm" default="false"/>
+
+  <xacro:arg name="robot_namespace" default="/"/>
+<!--  <xacro:include filename="$(find atlas200mini_description)/urdf/materials.xacro"/> -->
+
+  <!-- Including AGV Model -->
+  <xacro:include filename="$(find atlas200mini_description)/urdf/body.urdf.xacro"/>
+  <!-- Base_link is the center of the robot's bottom plate -->
+  <xacro:atlas200mini_body body_link="base_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:atlas200mini_body>
+
+  <!-- Including Wheels -->
+  <xacro:include filename="$(find atlas200mini_description)/urdf/wheel.urdf.xacro"/>
+  <!-- Wheel Properties -->
+  <xacro:property name="wheel_length" value="0.0822"/>
+  <xacro:property name="wheel_radius" value="0.1275"/>
+  <!-- Wheel Mounting Positions -->
+  <xacro:property name="wheelbase" value="0.49"/>
+  <xacro:property name="track" value="0.7"/>
+  <xacro:property name="wheel_vertical_offset" value="0.0"/>
+  <!-- Wheel macros-->
+  <xacro:atlas200mini_wheel wheel_prefix="front_left">
+    <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0"/>
+  </xacro:atlas200mini_wheel>
+  <xacro:atlas200mini_wheel wheel_prefix="front_right">
+    <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0"/>
+  </xacro:atlas200mini_wheel>
+  <xacro:atlas200mini_wheel wheel_prefix="rear_left">
+    <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0"/>
+  </xacro:atlas200mini_wheel>
+  <xacro:atlas200mini_wheel wheel_prefix="rear_right">
+    <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0"/>
+  </xacro:atlas200mini_wheel>
+
+  <!-- Including 3D Laser -->
+  <xacro:if value="$(arg 3d_laser)">
+    <xacro:include filename="$(find atlas200mini_description)/urdf/VLP-16.urdf.xacro"/>
+    <xacro:VLP-16 name="3d_laser" parent="base_link" topic="velodyne_points" hz="10" samples="1800" gpu="true">
+      <origin xyz="0.31 0 0.661" rpy="0 0 0"/>
+    </xacro:VLP-16>
+  </xacro:if>
+
+  <!-- Including 2D Lasers -->
+  <xacro:if value="$(arg 2d_laser)">
+    <xacro:include filename="$(find atlas200mini_description)/urdf/hokuyo.urdf.xacro"/>
+    <!-- Front Right Corner -->
+    <xacro:hokuyo name="front_right" parent="base_link" hz="40">
+      <origin xyz="0.385 -0.345 0.187" rpy="${M_PI} 0 ${-M_PI/4}"/>
+    </xacro:hokuyo>
+    <!-- Rear Left Corner -->
+    <xacro:hokuyo name="rear_left" parent="base_link" hz="40">
+      <origin xyz="-0.385 0.345 0.187" rpy="${M_PI} 0 ${M_PI*3/4}"/>
+    </xacro:hokuyo>
+  </xacro:if>
+
+  <!-- Including Camera -->
+  <xacro:if value="$(arg camera)">
+    <xacro:include filename="$(find atlas200mini_description)/urdf/d435.urdf.xacro"/>
+    <xacro:camera_d435 parent="base_link">
+      <origin xyz="0.42 0 0.5125" rpy="0 0 0"/>
+    </xacro:camera_d435>
+  </xacro:if>
+
+  <!-- Including IMU -->
+  <xacro:if value="$(arg imu)">
+    <xacro:include filename="$(find atlas200mini_description)/urdf/imu.urdf.xacro"/>
+    <xacro:imu parent="base_link">
+      <origin xyz="0.31 0 0.661" rpy="0 0 0"/>
+    </xacro:imu>
+  </xacro:if>
+
+  <!-- Including JACO Arm -->
+  <xacro:if value="$(arg arm)">
+    <xacro:include filename="$(find jaco_standalone)/urdf/jaco_standalone.urdf.xacro">
+      <xacro:arg name="add_transmission_pos" default="false"/>
+      <xacro:arg name="add_transmission_vel" default="true"/>
+    </xacro:include>
+    <xacro:jaco_standalone parent="base_link">
+      <origin xyz="0.343 0.305 0.22" rpy="0 0 ${M_PI/2}"/>
+    </xacro:jaco_standalone>
+
+    <xacro:include filename="$(find jaco_gazebo)/urdf/gzplugin_joint_control.urdf.xacro"/>
+
+    <xacro:gzplugin_joint_control robot_components_namespace="jaco" trajectory_param_namespace="jaco_trajectory"/>
+  </xacro:if>
+
+  <!-- Gazebo Plugins -->
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>$(arg robot_namespace)</robotNamespace>
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+      <legacyModeNS>true</legacyModeNS>
+    </plugin>
+  </gazebo>
+<!--
+  <gazebo>
+    <plugin name="gps_controller" filename="libhector_gazebo_ros_gps.so">
+      <robotNamespace>$(arg robot_namespace)</robotNamespace>
+      <updateRate>40</updateRate>
+      <bodyName>base_link</bodyName>
+      <frameId>base_link</frameId>
+      <topicName>navsat/fix</topicName>
+      <velocityTopicName>navsat/vel</velocityTopicName>
+      <referenceLatitude>49.9</referenceLatitude>
+      <referenceLongtitude>8.9</referenceLongtitude>
+      <referenceHeading>0</referenceHeading>
+      <referenceAltitude>0</referenceAltitude>
+      <drift>0.0001 0.0001 0.0001</drift>
+    </plugin>
+  </gazebo>
+-->
+</robot>

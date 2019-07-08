@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="atlas200mini_body">
+  <xacro:property name="M_PI" value="3.1415926535897931"/>
+
+  <xacro:macro name="atlas200mini_body" params="body_link *pose">
+    <link name="${body_link}">
+      <xacro:insert_block name="pose"/>
+      <inertial>
+        <mass value="50.0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="3.2279260417" ixy="0" ixz="0" iyy="3.773816667" iyz="0" izz="5.5317427083"/> <!-- x=0.854  |  y=0.7735  |  z=0.42 -->
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://atlas200mini_description/meshes/Body.STL"/>
+        </geometry>
+        <material name="zinc_yellow"><!-- blue -->
+          <color rgba="0.9725 0.9529 0.2078 1"/><!-- 0.3 0.57 1.0 1-->
+        </material>
+      </visual>
+<!--      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://atlas200mini_description/meshes/Body.STL"/>
+        </geometry>
+      </collision> -->
+    </link>
+
+    <gazebo reference="${body_link}">
+      <material>Gazebo/ZincYellow</material><!-- LightBlueLaser -->
+        <!-- Gazebo Material, please refer to /usr/share/gazebo-9/media/materials/scripts/gazebo.material -->
+    </gazebo>
+  </xacro:macro>
+</robot>

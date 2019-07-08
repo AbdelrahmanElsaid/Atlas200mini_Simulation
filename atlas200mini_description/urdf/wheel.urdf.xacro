@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="atlas200mini_wheel">
+  <xacro:property name="M_PI" value="3.1415926535897931"/>
+
+  <xacro:macro name="atlas200mini_wheel" params="wheel_prefix *joint_pose">
+    <link name="${wheel_prefix}_wheel_link">
+      <inertial>
+        <mass value="2.0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.00925465" ixy="0" ixz="0" iyy="0.01625625" iyz="0" izz="0.00925465"/> <!-- wheel_radius=0.1275  |  wheel_length=0.0822 -->
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://atlas200mini_description/meshes/Wheel.STL"/>
+        </geometry>
+        <material name="grey"><!-- silver -->
+          <color rgba="0.175 0.175 0.175 1"/><!-- 0.74 0.76 0.78 1 -->
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0"/>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <gazebo reference="${wheel_prefix}_wheel_link">
+      <material>Gazebo/Grey</material>
+      <mu1 value="1.0"/>
+      <mu2 value="1.0"/>
+      <kp value="10000000.0"/>
+      <kd value="1.0"/>
+      <fdir1 value="1 0 0"/>
+    </gazebo>
+
+    <joint name="${wheel_prefix}_wheel" type="continuous">
+      <parent link="base_link"/>
+      <child link="${wheel_prefix}_wheel_link"/>
+      <xacro:insert_block name="joint_pose"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+
+    <transmission name="${wheel_prefix}_wheel_trans" type="SimpleTransmission">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${wheel_prefix}_wheel">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${wheel_prefix}_wheel_motor">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+  </xacro:macro>
+</robot>
